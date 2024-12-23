@@ -1,0 +1,147 @@
+.back-button {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.back-button img {
+    width: 20px;
+    height: 20px;
+}
+/* Định dạng cho nút Start Game */
+#start-button-container {
+    position: fixed;
+    bottom: 20px; /* Cách phần dưới màn hình 20px */
+    left: 50%;
+    transform: translateX(-50%); /* Căn giữa hình ảnh */
+    cursor: pointer; /* Khi di chuột qua sẽ có con trỏ chuột */
+    z-index: 10; /* Đảm bảo hình ảnh nằm trên nền */
+}
+#start-button {
+    width: auto; /* Kích thước hình ảnh start.png */
+    height: auto;
+    animation: slight-bounce 1.5s infinite; /* Hiệu ứng nhún nhẹ */
+    transition: transform 1s ease, opacity 1s ease; /* Hiệu ứng phóng to và biến mất */
+}
+
+/* Thêm style cho nút play */
+#play-button {
+    display: none; /* Ẩn ban đầu */
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+    z-index: 10;
+    width: auto;
+    height: auto;
+    animation: slight-bounce 1.5s infinite;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-image: url('assets/anhnengame.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: black;
+    transition: background-image 0.5s ease-in-out;
+}
+
+/* Thêm keyframes để xử lý fade effect */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Thêm class mới để xử lý fade effect */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Style cho nút Guide */
+#guide-button-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#guide-button {
+    width: 50px;
+    height: auto;
+    transition: transform 0.5s ease-in-out;
+}
+
+#guide-button:hover {
+    transform: scale(1.2);
+}
+
+/* Style cho modal hướng dẫn */
+#guide-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.5s ease-in-out;
+    z-index: 2000;
+}
+
+#guide-modal.show {
+    display: block;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+#guide-modal-content {
+    position: relative;
+    width: 1000px;
+    height: auto;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#guide-image {
+    width: 80%;
+    height: auto;
+}
+
+#close-button {
+    position: absolute;
+    top: 10px;
+    right: 200px;
+    width: 50px;
+    z-index: 2001;
+    cursor: pointer;
+    transition: transform 0s ease-in-out;
+}
+
+#close-button:hover {
+    transform: scale(1.2);
+}
+
+#skip-button-container {
+    display: none; /* Ẩn ban đầu */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+#skip-button {
+    width: 100px; /* Điều chỉnh kích thước phù hợp */
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+#skip-button:hover {
+    transform: scale(1.1);
+}

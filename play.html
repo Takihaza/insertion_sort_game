@@ -1,0 +1,976 @@
+<!DOCTYPE HTML>
+<html lang="en-gb">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoodie Challenge</title>
+    <link rel="stylesheet" href="play.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+</head>
+<body onload="init()">
+    <audio id="clickSound" preload="auto">
+        <source src="assets/mixkit-cool-interface-click-tone-2568.wav" type="audio/wav">
+    </audio>
+    <header>
+        <div class="header-container">
+            <a href="index.html" class="back-button">
+                <img src="assets/main.png" alt="Back">
+            </a>
+            <h1>Hoodie Challenge</h1>
+        </div>
+    </header>
+    <div class="top-right-buttons">
+        <div id="highscore-button-container">
+            <img id="highscore-button" src="assets/bxh.png" alt="Xem Điểm Cao" onclick="showHighScoresModal()">
+        </div>
+        <div id="guide-button-container">
+            <img id="guide-button" src="assets/image-removebg-preview.png" alt="Hướng Dẫn">
+        </div>
+    </div>
+
+    <!-- Thêm thẻ bảng hướng dẫn -->
+    <div id="guide-modal">
+        <div id="guide-modal-content">
+            <img id="guide-image" src="assets/guide.png" alt="Bảng Hướng Dẫn">
+            <img id="close-button" src="assets/tat.png" alt="Đóng" />
+        </div>
+    </div>
+    <div id="notification-box" class="notification-hidden"></div>
+    <div class="stats-container">
+        <div id="time">Thời gian: 00:00</div>
+        <span class="separator">|</span>
+        <div id="score">Điểm: 0</div>
+        <span class="separator">|</span>
+        <div id="moveCounter">Số bước: 0</div>
+    </div>
+    <div id="container">
+        <div id="bars">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+    <div id="controls-container">
+        <div id="basic-controls">
+            <button onclick="resetBars()">Làm mới</button>
+            <button onclick="shuffleBars()">Xáo trộn</button>
+            <button onclick="moveLeft()">Sang trái</button>
+            <button onclick="moveRight()">Sang phải</button>
+        </div>
+        <div id="advanced-controls">
+            <button onclick="checkOrder()">Tính điểm</button>
+            <button onclick="nextStep()">Bước tiếp theo</button>
+            <button onclick="checkWrongPositions()">Vị trí sai</button>
+        </div>
+    </div>
+        <div id="commentary"></div>
+    </div>
+    <div class="shirt-container">
+        <div class="size-labels">
+        </div>
+    </div>
+    <button id="quit-button">Quit</button>
+</div>
+    <div id="quit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <p>Cảm ơn bạn đã tham gia trò chơi. Hy vọng bạn đã có những phút giây thư giãn và học hỏi thú vị! </p>
+            <p>Hãy quay lại chơi trò chơi để tiếp tục thử thách bản thân nhé!</p>
+            <div class="modal-buttons">
+                <button class="home-button" onclick="window.location.href='index.html'">Về trang chủ</button>
+            </div>
+        </div>
+    </div>
+    <div id="highscores-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeHighScoresModal()">&times;</span>
+            <h2>Bảng Xếp Hạng</h2>
+            <div id="highscores-content"></div>
+        </div>
+    </div>
+
+    <script>
+    let start_time;
+    let timerInterval;
+    let game_over = false;
+    let bars = document.getElementsByClassName('bar');
+    let sizes = ["4XS", "3XS", "2XS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+    let sizeOrder = {
+    "4XS": 0, "3XS": 1, "2XS": 2, "XS": 3, "S": 4, "M": 5, "L": 6, 
+    "XL": 7, "2XL": 8, "3XL": 9, "4XL": 10, "5XL": 11, "6XL": 12
+};
+    let currentIndex = 0;
+    // Khai báo một lần duy nhất ở phần sau
+    let isPaused = false;
+    let moveHistory = [];
+    let sortedIndex = 0; // Chỉ giữ lại khai báo này
+    let score = 0; // Điểm ban đầu là 0
+    let moving = false;   // Biến kiểm tra trạng thái di chuyển
+    let tempValue = "";   // Biến tạm lưu giá trị thanh hiện tại
+    let currentSortedIndex = 1;  // Vị trí hiện tại trong thuật toán Sắp xếp chèn
+    let isGameFinished = false; // Biến kiểm soát trạng thái trò chơi
+    let selectedBar = false;
+    let moveCount = 0;
+    let checkCount = 0;
+    const MAX_FREE_CHECKS = 3; // Số lần kiểm tra miễn phí
+    const PENALTY_PER_CHECK = 5; // Số điểm bị trừ mỗi lần kiểm tra thêm
+        // Thêm sự kiện click vào các thanh bar
+        Array.from(bars).forEach((bar, index) => {
+            bar.onclick = () => {
+                selectBar(index);
+            };
+        });
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function shuffleBars() {
+        shuffle(sizes);
+        for (let i = 0; i < bars.length; i++) {
+            bars[i].innerHTML = `<span>${sizes[i]}</span> <img src="assets/aokhoac.png" alt="Áo">`;
+            bars[i].style.left = `${i * 10}%`;
+            bars[i].style.backgroundColor = '#edd8d8';
+        }
+        currentIndex = 0;
+        bars[0].style.backgroundColor = '#e600ff';
+        game_over = false;
+        clearInterval(timerInterval);
+        start_time = time_now();
+        timerInterval = setInterval(updateElapsedTime, 1000);
+    }
+    
+
+    function selectBar(index) {
+        if (moving || game_over) return;
+        
+        startTimer();
+        
+        playClickSound();
+        
+        Array.from(bars).forEach(bar => {
+            bar.style.backgroundColor = '#edd8d8';
+        });
+        
+        currentIndex = index;
+        bars[currentIndex].style.backgroundColor = '#e600ff';
+        
+        Array.from(bars).forEach((bar, i) => {
+            bar.classList.remove('active');
+            if (i === index) {
+                bar.classList.add('active');
+            }
+        });
+
+        selectedBar = true;
+    }
+
+function swapBars(index1, index2) {
+    let tempSize = bars[index1].innerHTML;
+    bars[index1].innerHTML = bars[index2].innerHTML;
+    bars[index2].innerHTML = tempSize;
+    bars[index1].style.left = `${index1 * 10}%`;
+    bars[index2].style.left = `${index2 * 10}%`;
+}
+    function init() {
+        resetBars();
+        initializeBarListeners();
+        game_over = false;
+        document.addEventListener('keydown', handleKeyPress);
+        
+        const bgMusic = document.getElementById('backgroundMusic');
+        if (bgMusic) {
+            bgMusic.volume = 0.5;
+            document.addEventListener('click', function playMusic() {
+                bgMusic.play();
+                document.removeEventListener('click', playMusic);
+            }, { once: true });
+        }
+    }
+
+    // Giữ lại hàm phát âm thanh click
+    function playClickSound() {
+        const clickSound = document.getElementById('clickSound');
+        if (clickSound.readyState >= 2) {
+            clickSound.currentTime = 0;
+            clickSound.play().catch(function(error) {
+                console.log("Click sound failed:", error);
+            });
+        }
+    }
+
+    function time_now() {
+        let d = new Date();
+        return d.getTime();
+    }
+    function updateElapsedTime() {
+        if (!game_over) {
+            let currentTime = Math.round((time_now() - start_time) / 1000);
+            let minutes = Math.floor(currentTime / 60);
+            let seconds = currentTime % 60;
+            updateStats('time', "Thời gian: " + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0'));
+        }
+    }
+
+    function end_game(correct) {
+    game_over = true;
+    clearInterval(timerInterval);
+    let time_taken = Math.round((time_now() - start_time) / 1000);
+    if (correct) {
+        document.getElementById('commentary').innerHTML = "Làm tốt lắm! Bạn đã hoàn thành trong " + time_taken + " giây ";
+    } else {
+        document.getElementById('commentary').innerHTML = "Rất tiếc, trò chơi đã kết thúc! Điểm của bạn là: " + score;
+    }
+}
+
+
+
+
+function nextStep() {
+    if (currentIndex < 1) {
+        currentIndex = 1; // Bắt đầu từ phần tử thứ 2
+    }
+    
+    if (currentIndex < bars.length) {
+        let keyBar = bars[currentIndex];
+        let keySize = keyBar.querySelector('span').innerText.trim();
+        let j = currentIndex - 1;
+        
+        // Tô màu cho phần tử đang xét
+        bars[currentIndex].style.backgroundColor = '#ffeb3b';
+        
+        // Tìm vị trí để chèn
+        while (j >= 0 && sizeOrder[bars[j].querySelector('span').innerText.trim()] > sizeOrder[keySize]) {
+            // Tô màu cho phần tử đang so sánh
+            bars[j].style.backgroundColor = '#4caf50';
+            j--;
+        }
+        
+        // Nếu tìm thấy vị trí cần chèn
+        if (j + 1 !== currentIndex) {
+            // Lưu giá trị và vị trí cần chèn
+            let targetPosition = j + 1;
+            
+            document.getElementById('commentary').innerHTML = 
+                `Gợi ý: Di chuyển size ${keySize} sang trái đến vị trí ${targetPosition + 1}`;
+                
+            // Đánh dấu vị trí cần chèn
+            if (targetPosition >= 0) {
+                bars[targetPosition].style.backgroundColor = '#4caf50';
+            }
+        } else {
+            // Nếu phần tử đã đúng vị trí
+            currentIndex++;
+            if (currentIndex < bars.length) {
+                document.getElementById('commentary').innerHTML = 
+                    "Chuyển sang phần tử tiếp theo";
+            }
+        }
+        
+        // Reset màu cho các phần tử khác
+        for (let i = 0; i < bars.length; i++) {
+            if (i !== currentIndex && i !== j + 1) {
+                bars[i].style.backgroundColor = '#edd8d8';
+            }
+        }
+    } else {
+        document.getElementById('commentary').innerHTML = 
+            "Đã hoàn thành thuật toán sắp xếp!";
+    }
+}
+
+// Thêm hàm để làm nổi bật thanh được chọn
+function highlightBar(index) {
+    const bars = document.querySelectorAll('.bar');
+    bars.forEach(bar => bar.classList.remove('active'));
+    bars[index].classList.add('active'); // Đánh dấu thanh đang cần chú ý
+}
+
+
+
+
+function resetBars() {
+    shuffle(sizes);
+    for (let i = 0; i < bars.length; i++) {
+        bars[i].innerHTML = `<span>${sizes[i]}</span> <img src="assets/aokhoac.png" alt="Áo">`;
+        bars[i].style.left = `${i * 10}%`;
+        bars[i].style.backgroundColor = '#edd8d8';
+        bars[i].style.transform = 'scale(1)';
+    }
+    currentIndex = 1;
+    initializeBarListeners();
+    document.getElementById('commentary').innerHTML = '';
+    game_over = false;
+    
+    // Dừng timer nếu đang chạy
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    document.getElementById('time').innerHTML = "Thời gian: 00:00";
+    score = 0;
+    document.getElementById('score').innerHTML = "Điểm: " + score;
+    moveCount = 0;
+    document.getElementById('moveCounter').textContent = "Số bước: 0";
+    
+    selectedBar = false;
+    
+    insertionSortProgress = {
+        currentIndex: 1,
+        isCorrectStep: true,
+        moves: []
+    };
+    moveHistory = [];
+    
+    document.removeEventListener('keydown', handleKeyPress);
+    document.addEventListener('keydown', handleKeyPress);
+    checkCount = 0; // Reset số lần kiểm tra
+}
+
+    // Thêm các hàm từ basicFunctions.js
+    var speed = 1000;
+    var delay_time = 1000;
+
+    // Lấy element input speed
+    const inp_aspeed = document.getElementById('a_speed');
+    inp_aspeed.addEventListener("input", vis_speed);
+
+    function vis_speed() {
+        var array_speed = inp_aspeed.value;
+        switch(parseInt(array_speed)) {
+            case 1: delay_time = 1000; break; // Rất chậm
+            case 2: delay_time = 700; break;  // Chậm
+            case 3: delay_time = 600; break;  // Trung bình
+            case 4: delay_time = 500; break;  // Nhanh
+            case 5: delay_time = 400; break;  // Rất nhanh
+        }
+    }
+
+    var c_delay = 0;
+
+    async function div_update(cont, height, color) {
+        await checkPause();
+        return new Promise(resolve => {
+            setTimeout(async function() {
+                await checkPause();
+                cont.style.backgroundColor = color;
+                cont.style.height = height + "%";
+                if (cont.querySelector(".bar-value")) {
+                    cont.querySelector(".bar-value").textContent = Math.round(height);
+                }
+                resolve();
+            }, delay_time);
+        });
+    }
+
+    function enable_buttons() {
+        window.setTimeout(function() {
+            document.getElementById("a_generate").disabled = false;
+            document.getElementById("a_size").disabled = false;
+            document.getElementById("a_sort").disabled = false;
+            document.getElementById("a_speed").disabled = false;
+            document.getElementById("a_pause").disabled = true;
+            document.getElementById("a_continue").disabled = true;
+        }, c_delay += delay_time);
+    }
+
+    // Thêm hàm checkPause nếu bạn muốn sử dụng tính năng tạm dừng
+    async function checkPause() {
+        return new Promise(resolve => {
+            if (isPaused) {
+                const checkInterval = setInterval(() => {
+                    if (!isPaused) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    // Sửa lại hàm moveLeft  
+    function moveLeft() {
+        if (game_over) {
+            document.getElementById('commentary').innerHTML = 
+                "Trò chơi đã kết thúc! Vui lòng bấm 'Làm mới' để chơi lại.";
+            return;
+        }
+        
+        if (currentIndex > 0) {
+            let currentSize = bars[currentIndex].querySelector('span').innerText.trim();
+            let leftSize = bars[currentIndex - 1].querySelector('span').innerText.trim();
+            
+            moveHistory.push({
+                from: currentIndex,
+                to: currentIndex - 1,
+                currentSize: currentSize,
+                leftSize: leftSize
+            });
+            
+            if (sizeOrder[leftSize] > sizeOrder[currentSize]) {
+                swapBars(currentIndex, currentIndex - 1);
+                currentIndex--;
+                // Cập nhật màu cho thanh đang được chọn
+                Array.from(bars).forEach((bar, i) => {
+                    bar.style.backgroundColor = i === currentIndex ? '#e600ff' : '#edd8d8';
+                });
+                moveCount++;
+                document.getElementById('moveCounter').textContent = `Số bước: ${moveCount}`;
+            }
+        }
+    }
+
+    // Sửa lại hàm moveRight
+    function moveRight() {
+        if (game_over) {
+            document.getElementById('commentary').innerHTML = 
+                "Trò chơi đã kết thúc! Vui lòng bấm 'Làm mới' để chơi lại.";
+            return;
+        }
+        
+        if (currentIndex < bars.length - 1) {
+            let currentSize = bars[currentIndex].querySelector('span').innerText.trim();
+            let rightSize = bars[currentIndex + 1].querySelector('span').innerText.trim();
+            
+            moveHistory.push({
+                from: currentIndex,
+                to: currentIndex + 1,
+                currentSize: currentSize,
+                rightSize: rightSize,
+                direction: 'right'
+            });
+            
+            swapBars(currentIndex, currentIndex + 1);
+            currentIndex++;
+            // Cập nhật màu cho thanh đang được chọn
+            Array.from(bars).forEach((bar, i) => {
+                bar.style.backgroundColor = i === currentIndex ? '#e600ff' : '#edd8d8';
+            });
+            moveCount++;
+            document.getElementById('moveCounter').textContent = `Số bước: ${moveCount}`;
+        }
+    }
+
+    // Cp nhật hàm analyzeAlgorithm để nhận diện chính xác hơn
+    function analyzeAlgorithm(moves) {
+        if (moves.length === 0) return 'unknown';
+        
+        let leftMoves = 0;
+        let rightMoves = 0;
+        
+        moves.forEach(move => {
+            if (move.from > move.to) leftMoves++;
+            if (move.from < move.to) rightMoves++;
+        });
+        
+        // Đơn giản hóa điều kiện nhận diện Insertion Sort
+        if (leftMoves > rightMoves) {
+            return 'insertion';
+        }
+        
+        // Bubble Sort: Di chuyển sang phải nhiều và có tính lặp lại
+        if (rightMoves > leftMoves && isBubblePattern(moves)) {
+            return 'bubble';
+        }
+        
+        // Selection Sort: Có mẫu di chuyển đặc trưng
+        if (isSelectionPattern(moves)) {
+            return 'selection';
+        }
+        
+        return 'unknown';
+    }
+
+    // Thêm các hàm hỗ trợ mới
+    function isSequential(moves) {
+        let currentGroup = 1;
+        for (let i = 1; i < moves.length; i++) {
+            if (moves[i].from < moves[i-1].from) currentGroup++;
+        }
+        return currentGroup <= moves.length / 2;
+    }
+
+    function isBubblePattern(moves) {
+        let passes = 0;
+        let currentPass = [];
+        
+        for (let i = 0; i < moves.length; i++) {
+            currentPass.push(moves[i]);
+            if (moves[i].from === 0 || i === moves.length - 1) {
+                if (currentPass.length > 0) passes++;
+                currentPass = [];
+            }
+        }
+        return passes >= 2;
+    }
+
+    function isSelectionPattern(moves) {
+        let minMoves = 0;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].to === minMoves) minMoves++;
+        }
+        return minMoves >= moves.length / 3;
+    }
+
+    // Thêm hàm để lưu và hiển thị điểm cao
+    function saveHighScore(score, timeTaken, moveCount) {
+        // Lấy danh sách điểm cao từ localStorage
+        let highScores = JSON.parse(localStorage.getItem('sortingGameHighScores') || '[]');
+        
+        // Thêm điểm mới
+        const newScore = {
+            score: score,
+            time: timeTaken,
+            moves: moveCount,
+            date: new Date().toLocaleDateString('vi-VN')
+        };
+        
+        highScores.push(newScore);
+        
+        // Sắp xếp theo điểm cao đến thấp
+        highScores.sort((a, b) => b.score - a.score);
+        
+        // Chỉ giữ top 5 điểm cao nhất
+        highScores = highScores.slice(0, 5);
+        
+        // Lưu lại vào localStorage
+        localStorage.setItem('sortingGameHighScores', JSON.stringify(highScores));
+        
+        return highScores;
+    }
+
+    // Sửa lại hàm checkOrder ể thêm phần lưu và hiển thị điểm cao
+    function checkOrder() {
+        if (game_over) return;
+        
+        let sizesInBars = Array.from(bars).map(bar => 
+            bar.querySelector('span').innerText.trim());
+        let isCorrectOrder = true;
+        
+        for (let i = 0; i < sizesInBars.length - 1; i++) {
+            if (sizeOrder[sizesInBars[i]] > sizeOrder[sizesInBars[i + 1]]) {
+                isCorrectOrder = false;
+                break;
+            }
+        }
+
+        if (isCorrectOrder) {
+            game_over = true;
+            let timeTaken = Math.round((time_now() - start_time) / 1000);
+            
+            // Tính điểm cơ bản và bonus thời gian
+            let basePoints = 50;
+            let timeBonus = Math.max(0, 30 - Math.floor(timeTaken / 10));
+            
+            // Thêm tính điểm cho số bước di chuyển
+            let moveBonus = Math.max(0, 50 - Math.floor(moveCount / 2));
+            
+            // Tính bonus cho thuật toán
+            let algorithmBonus = 0;
+            let message = '';
+
+            // Phân tích thuật toán sử dụng
+            let algorithmUsed = analyzeAlgorithm(moveHistory);
+            
+            switch(algorithmUsed) {
+                case 'insertion':
+                    algorithmBonus = 50;
+                    message = "Chúc mừng! Bạn đã sử dụng thuật toán Insertion Sort\n";
+                    break;
+                case 'bubble':
+                    algorithmBonus = 30;
+                    message = "Bạn đã sử dụng Bubble Sort. Đây cũng là một cách giải quyết tốt!\n";
+                    break;
+                case 'selection':
+                    algorithmBonus = 30;
+                    message = "Bạn đã sử dụng Selection Sort. Rất sáng tạo!\n";
+                    break;
+                default:
+                    algorithmBonus = 20;
+                    message = "Bạn đã sử dụng một phương pháp sắp xếp độc đáo!\n";
+            }
+
+            // Tính điểm trừ từ việc kiểm tra quá số lần cho phép
+            let checkPenalty = 0;
+            if (checkCount > MAX_FREE_CHECKS) {
+                checkPenalty = (checkCount - MAX_FREE_CHECKS) * PENALTY_PER_CHECK;
+            }
+
+            // Tính tổng điểm và hiển thị chi tiết
+            score = basePoints + timeBonus + moveBonus + algorithmBonus - checkPenalty;
+            score = Math.max(0, score); // Đảm bảo điểm không âm
+
+            message += `Điểm cơ bản: ${basePoints}\n`;
+            message += `Bonus thời gian: +${timeBonus}\n`;
+            message += `Bonus số bước: +${moveBonus}\n`;
+            message += `Bonus thuật toán: +${algorithmBonus}\n`;
+            if (checkPenalty > 0) {
+                message += `Điểm trừ do kiểm tra quá số lần: -${checkPenalty}\n`;
+            }
+            message += `Số bước di chuyển: ${moveCount}\n`;
+            message += `Thời gian hoàn thành: ${timeTaken} giây\n`;
+            message += `Tổng điểm: ${score}`;
+            
+            // Lưu điểm cao và lấy danh sách điểm cao
+            const highScores = saveHighScore(score, timeTaken, moveCount);
+            
+            // Thêm thông tin điểm cao vào message
+            message += '\n\n=== BẢNG XẾP HẠNG ===\n';
+            highScores.forEach((hs, index) => {
+                message += `${index + 1}. ${hs.score} điểm - ${hs.moves} bước - ${hs.time}s (${hs.date})\n`;
+            });
+            
+            // Kiểm tra nếu là điểm cao mới
+            if (highScores[0].score === score && highScores[0].time === timeTaken) {
+                message += '\nChúc mừng! Bạn đã đạt điểm cao mới!';
+            }
+            
+            updateStats('score', "Điểm: " + score);
+            document.getElementById('commentary').innerHTML = message;
+            end_game(true);
+        }
+    }
+
+    // Thêm hàm để hiển thị bảng điểm cao
+    function showHighScores() {
+        const highScores = JSON.parse(localStorage.getItem('sortingGameHighScores') || '[]');
+        if (highScores.length === 0) {
+            return 'Chưa có điểm cao nào được ghi nhận.';
+        }
+        
+        let message = '=== BẢNG XẾP HẠNG ===\n';
+        highScores.forEach((hs, index) => {
+            message += `${index + 1}. ${hs.score} điểm - ${hs.moves} bước - ${hs.time}s (${hs.date})\n`;
+        });
+        return message;
+    }
+
+    function checkWrongPositions() {
+        checkCount++;
+        let sizesInBars = Array.from(bars).map(bar => 
+            bar.querySelector('span').innerText.trim());
+        let wrongPositions = [];
+        
+        const notificationBox = document.getElementById('notification-box');
+        notificationBox.classList.remove('notification-hidden');
+        notificationBox.style.visibility = 'visible';
+        notificationBox.style.opacity = '1';
+        
+        // Kiểm tra các vị trí sai
+        for (let i = 0; i < sizesInBars.length - 1; i++) {
+            if (sizeOrder[sizesInBars[i]] > sizeOrder[sizesInBars[i + 1]]) {
+                bars[i].style.backgroundColor = '#ff0000';
+                bars[i+1].style.backgroundColor = '#ff0000';
+                wrongPositions.push({
+                    pos1: i,
+                    size1: sizesInBars[i],
+                    pos2: i+1,
+                    size2: sizesInBars[i+1]
+                });
+            }
+        }
+        
+        let message = "";
+        
+        // Tính toán và trừ điểm nếu vượt quá số lần kiểm tra miễn phí
+        if (checkCount > MAX_FREE_CHECKS) {
+            let penalty = PENALTY_PER_CHECK;
+            score = Math.max(0, score - penalty); // Đảm bảo điểm không âm
+            updateStats('score', "Điểm: " + score);
+            
+            // Thêm hiệu ứng visual feedback khi bị trừ điểm
+            const scoreElement = document.getElementById('score');
+            scoreElement.classList.add('penalty');
+            setTimeout(() => {
+                scoreElement.classList.remove('penalty');
+            }, 1000);
+        }
+
+        if (wrongPositions.length > 0) {
+            message = "<strong>Các vị trí cần sửa:</strong><br>";
+            wrongPositions.forEach(pos => {
+                message += `• Size ${pos.size1} và ${pos.size2} đang sai vị trí.<br>`;
+                message += `• Gợi ý: ${pos.size2} phải đứng trước ${pos.size1}<br>`;
+            });
+            
+            // Thêm thông báo về số lần kiểm tra và điểm phạt
+            if (checkCount > MAX_FREE_CHECKS) {
+                message += `<br><strong style="color: red;">Cảnh báo:</strong> Đây là lần kiểm tra thứ ${checkCount}.<br>`;
+                message += `Bạn đã vượt quá ${MAX_FREE_CHECKS} lần kiểm tra miễn phí.<br>`;
+                message += `Điểm bị trừ: -${PENALTY_PER_CHECK} điểm<br>`;
+                message += `Điểm hiện tại: ${score}`;
+            } else {
+                message += `<br>Còn ${MAX_FREE_CHECKS - checkCount} lần kiểm tra miễn phí.`;
+            }
+        } else {
+            message = "Tất cả các vị trí đều đúng!";
+            notificationBox.classList.remove('error');
+            notificationBox.classList.add('success');
+        }
+        
+        notificationBox.innerHTML = message;
+        
+        // Hiển thị thông báo trong 5 giây
+        setTimeout(() => {
+            notificationBox.classList.add('notification-hidden');
+            notificationBox.style.visibility = 'hidden';
+            notificationBox.style.opacity = '0';
+        }, 5000);
+        
+        // Reset màu sau 3 giây
+        setTimeout(() => {
+            Array.from(bars).forEach(bar => {
+                if (bar.style.backgroundColor === 'rgb(255, 0, 0)') {
+                    bar.style.backgroundColor = '#edd8d8';
+                }
+            });
+        }, 3000);
+    }
+
+    function saveScore() {
+        let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+        highScores.push({
+            score: score,
+            time: Math.round((time_now() - start_time) / 1000),
+            date: new Date().toLocaleDateString()
+        });
+        highScores.sort((a, b) => b.score - a.score);
+        highScores = highScores.slice(0, 5); // Giữ top 5
+        localStorage.setItem('highScores', JSON.stringify(highScores));
+    }
+
+    // Cải thiện event listener cho các thanh
+    function initializeBarListeners() {
+        Array.from(bars).forEach((bar, index) => {
+            // Xóa listener cũ nếu có
+            bar.removeEventListener('click', bar.clickHandler);
+            
+            // Thêm listener mới với debounce
+            bar.clickHandler = debounce(() => {
+                if (!moving && !game_over) {
+                    selectBar(index);
+                }
+            }, 100); // Debounce 100ms
+            
+            bar.addEventListener('click', bar.clickHandler);
+            
+            // Thêm hiệu ứng hover
+            bar.addEventListener('mouseenter', () => {
+                if (!moving && !game_over) {
+                    bar.style.cursor = 'pointer';
+                    bar.style.transform = 'scale(1.05)';
+                }
+            });
+            
+            bar.addEventListener('mouseleave', () => {
+                bar.style.cursor = 'default';
+                bar.style.transform = 'scale(1)';
+            });
+        });
+    }
+
+    // Thêm hàm debounce để tránh click quá nhanh
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Sửa lại hàm checkIfInsertionSort
+    function checkIfInsertionSort(moves) {
+        if (moves.length === 0) return false;
+        
+        // Kiểm tra đặc điểm của Insertion Sort:
+        // - Di chuyển từ phải sang trái
+        // - Chỉ di chuyển khi phần tử bên trái lớn hơn
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i];
+            if (move.from <= move.to || 
+                sizeOrder[move.leftSize] <= sizeOrder[move.currentSize]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Tách riêng hàm xử lý phím để dễ quản lý
+    function handleKeyPress(event) {
+        if (selectedBar && !game_over && !moving) {
+            switch(event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault(); // Ngăn cuộn trang
+                    moveLeft();
+                    playClickSound();
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault(); // Ngăn cuộn trang
+                    moveRight();
+                    playClickSound();
+                    break;
+            }
+        }
+    }
+
+    const quitButton = document.getElementById("quit-button");
+    const quitModal = document.getElementById("quit-modal");
+    const closeModal = document.querySelector(".close-modal");
+
+    quitButton.addEventListener("click", function() {
+        quitModal.style.display = "block";
+        // Thêm class để kích hoạt animation
+        quitModal.classList.add("show");
+    });
+
+    closeModal.addEventListener("click", function() {
+        quitModal.style.display = "none";
+        quitModal.classList.remove("show");
+    });
+
+    // Đóng modal khi click bên ngoài
+    window.addEventListener("click", function(event) {
+        if (event.target == quitModal) {
+            quitModal.style.display = "none";
+            quitModal.classList.remove("show");
+        }
+    });
+
+    function updateStats(type, value) {
+        const element = document.getElementById(type);
+        element.textContent = value;
+        element.classList.remove('number-update');
+        void element.offsetWidth; // Trigger reflow
+        element.classList.add('number-update');
+    }
+
+    // Thêm các hàm xử lý modal điểm cao
+    function showHighScoresModal() {
+        const modal = document.getElementById('highscores-modal');
+        const content = document.getElementById('highscores-content');
+        const highScores = JSON.parse(localStorage.getItem('sortingGameHighScores') || '[]');
+        
+        let html = '<table class="highscores-table">';
+        html += '<tr><th>Hạng</th><th>Điểm</th><th>Số bước</th><th>Thời gian</th><th>Ngày</th></tr>';
+        
+        highScores.forEach((hs, index) => {
+            const rankClass = index < 3 ? `rank-${index + 1}` : '';
+            html += `
+                <tr class="${rankClass}">
+                    <td>${index + 1}</td>
+                    <td>${hs.score}</td>
+                    <td>${hs.moves}</td>
+                    <td>${hs.time}s</td>
+                    <td>${hs.date}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</table>';
+        
+        if (highScores.length === 0) {
+            html = '<p>Chưa có điểm cao nào được ghi nhận.</p>';
+        }
+        
+        content.innerHTML = html;
+        modal.style.display = 'block';
+    }
+
+    function closeHighScoresModal() {
+        document.getElementById('highscores-modal').style.display = 'none';
+    }
+
+    // Đóng modal khi click bên ngoài
+    window.onclick = function(event) {
+        const modal = document.getElementById('highscores-modal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function startTimer() {
+        if (!timerInterval) {  // Chỉ bắt đầu nếu timer chưa chạy
+            start_time = time_now();
+            timerInterval = setInterval(updateElapsedTime, 1000);
+        }
+    }
+
+    let backgroundMusic = document.getElementById('backgroundMusic');
+
+    // Thêm event listeners
+    document.getElementById('pause-button').addEventListener('click', pauseGame);
+    document.getElementById('resume-button').addEventListener('click', resumeGame);
+
+    </script>
+    <audio id="backgroundMusic" loop src="assets/Sway To My Beat In Cosmos _ Welcome to My World - Robin (HSR).mp3"></audio>   
+    <script>
+    // Hiển thị/ẩn bảng hướng dẫn khi nhấn vào huongdan.png
+document.getElementById("guide-button").addEventListener("click", function () {
+    const guideModal = document.getElementById("guide-modal");
+
+    // Kiểm tra bảng hướng dẫn hiện tại là hiển thị hay ẩn
+    if (guideModal.classList.contains("show")) {
+        // Nếu bảng hướng dẫn đang hiển thị, ẩn nó
+        guideModal.classList.remove("show");
+    } else {
+        // Nếu bảng hướng dẫn chưa hiển thị, hiển thị nó
+        guideModal.classList.add("show");
+    }
+});
+
+// Ẩn bảng hướng dẫn khi nhấn vào tat.png
+document.getElementById("close-button").addEventListener("click", function () {
+    const guideModal = document.getElementById("guide-modal");
+    guideModal.classList.remove("show");
+}); 
+
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quitButton = document.getElementById("quit-button");
+        const quitModal = document.getElementById("quit-modal");
+        const closeModal = document.querySelector(".close-modal");
+
+        if (quitButton && quitModal && closeModal) {
+            quitButton.addEventListener("click", function() {
+                console.log("Quit button clicked"); // Để debug
+                quitModal.style.display = "block";
+                quitModal.classList.add("show");
+            });
+
+            closeModal.addEventListener("click", function() {
+                console.log("Close button clicked"); // Để debug
+                quitModal.style.display = "none";
+                quitModal.classList.remove("show");
+            });
+
+            window.addEventListener("click", function(event) {
+                if (event.target == quitModal) {
+                    quitModal.style.display = "none";
+                    quitModal.classList.remove("show");
+                }
+            });
+        } else {
+            console.error("One or more elements not found"); // Để debug
+        }
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô phỏng thuật toán Insertion Sort</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap');
+
+    .header-container {
+        display: flex;
+        align-items: center;
+        background-color: #e4c2c2;
+        padding: 8px 16px;
+        height: 40px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .back-button {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+    }
+
+    .back-button img {
+        width: 20px;
+        height: 20px;
+    }
+
+    h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 18px;
+        margin: 0;
+        font-weight: 600;
+        background: linear-gradient(45deg, #8B4513, #A0522D);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        letter-spacing: 0.5px;
+        position: relative;
+    }
+
+    h1::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(45deg, #8B4513, #A0522D);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    h1:hover::after {
+        transform: scaleX(1);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+        <a href="index.html" class="back-button"><img src="assets/main.png"></a>
+        <h1>SẮP XẾP CHÈN - INSERTION SORT</h1>
+    </div>
+</header>
+  
+  <main>
+    <div class="controls">
+      <div class="input-group">
+        <label for="a_input">Nhập mảng:</label>
+        <input id="a_input" type="text" placeholder="Ví dụ: 5,2,9,1,5,6">
+      </div>
+      <div class="input-group">
+        <label for="a_size">N =</label>
+        <input id="a_size" type="number" min="5" max="30" value="15">
+      </div>
+      <div class="input-group">
+        <label for="a_speed">Tốc độ:</label>
+        <input id="a_speed" type="range" min="1" max="5" value="4">
+      </div>
+      <button id="a_generate">Tạo ngẫu nhiên</button>
+      <button id="a_create">Tạo mảng</button>
+      <button id="a_sort">Sắp xếp</button>
+      <button id="a_pause" disabled>Tạm dừng</button>
+      <button id="a_continue" disabled>Tiếp tục</button>
+    </div>
+    
+    <div class="visualization">
+      <div id="array_container"></div>
+      <div id="code_container">
+        <pre id="insertion_code">
+function insertionSort(arr) {
+  <span id="line1">for (let i = 1; i < arr.length; i++) {</span>
+    <span id="line2">let key = arr[i];</span>
+    <span id="line3">let j = i - 1;</span>
+    
+    <span id="line4">while (j >= 0 && arr[j] > key) {</span>
+      <span id="line5">arr[j + 1] = arr[j];</span>
+      <span id="line6">j = j - 1;</span>
+    <span id="line7">}</span>
+    <span id="line8">arr[j + 1] = key;</span>
+  <span id="line9">}</span>
+  <span id="line10">return arr;</span>
+}
+        </pre>
+      </div>
+    </div>
+    <!-- Thêm div để hiển thị giải thích -->
+    <div id="explanation_container">
+      <p id="explanation">Giải thích từng bước sẽ được hiển thị ở đây.</p>
+  </div>
+  
+    <div class="legend">
+      <div class="legend-item"><span class="color-box initial"></span>Chưa sắp xếp</div>
+      <div class="legend-item"><span class="color-box comparing"></span>Đang so sánh</div>
+      <div class="legend-item"><span class="color-box swapping"></span>Đang hoán đổi</div>
+      <div class="legend-item"><span class="color-box sorted"></span>Đã sắp xếp</div>
+    </div>
+  </main>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="setUp.js"></script>
+  <script src="basicFunctions.js"></script>
+  <script src="insertion.js"></script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoodie Challenge</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {  
+            margin: 0;
+            height: 100vh;
+            background-image: url('assets/Screenshot\ 2024-11-05\ 082938.png');
+            background-size: cover;
+            background-position: center;
+            font-family: 'Comic Sans MS', sans-serif;
+            background-color: #735f3f;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Thêm overlay để tạo hiệu ứng depth */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.3) 100%);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 80px;
+            color: #1a237e;
+            margin: 50px 0;
+            font-weight: 900;
+            letter-spacing: 5px;
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(45deg, #0d47a1, #1565c0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 2px #0d47a1;
+            text-shadow: 
+                3px 3px 0 #ffffff,
+                -3px -3px 0 #ffffff,
+                3px -3px 0 #ffffff,
+                -3px 3px 0 #ffffff,
+                0 0 20px rgba(13, 71, 161, 0.8),
+                0 0 30px rgba(13, 71, 161, 0.6),
+                0 0 40px rgba(13, 71, 161, 0.4);
+            animation: titlePulse 2s ease-in-out infinite alternate;
+        }
+
+        .cloud-button {
+            display: inline-block;
+            padding: 20px 30px;
+            font-size: 22px;
+            color: #1a237e;
+            text-decoration: none;
+            background: linear-gradient(145deg, aquamarine, #98FFE0);
+            border-radius: 50px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2),
+                       inset 0 2px 4px rgba(255, 255, 255, 0.5);
+            margin: 20px;
+            width: 220px;
+            border: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cloud-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .cloud-button:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(145deg, #98FFE0, aquamarine);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3),
+                       inset 0 2px 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .cloud-button:hover::before {
+            left: 100%;
+        }
+
+        .cloud-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .cloud-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+            padding: 50px 0;
+        }
+
+        .cloud-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: auto;
+            margin-bottom: 100px;
+            width: 80%;
+            max-width: 1000px;
+        }
+
+        /* Animation cho các nút */
+        @keyframes floatButton {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .cloud-links a:nth-child(1) { animation: floatButton 3s ease-in-out infinite; }
+        .cloud-links a:nth-child(2) { animation: floatButton 3s ease-in-out infinite 0.5s; }
+        .cloud-links a:nth-child(3) { animation: floatButton 3s ease-in-out infinite 1s; }
+
+        /* Hiệu ứng particle background */
+        @keyframes particleAnimation {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100vh); }
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: particleAnimation 15s infinite linear;
+        }
+
+        /* Animation mới cho tiêu đề */
+        @keyframes titlePulse {
+            from {
+                text-shadow: 
+                    3px 3px 0 #ffffff,
+                    -3px -3px 0 #ffffff,
+                    3px -3px 0 #ffffff,
+                    -3px 3px 0 #ffffff,
+                    0 0 20px rgba(13, 71, 161, 0.8),
+                    0 0 30px rgba(13, 71, 161, 0.6),
+                    0 0 40px rgba(13, 71, 161, 0.4);
+            }
+            to {
+                text-shadow: 
+                    3px 3px 0 #ffffff,
+                    -3px -3px 0 #ffffff,
+                    3px -3px 0 #ffffff,
+                    -3px 3px 0 #ffffff,
+                    0 0 30px rgba(13, 71, 161, 0.9),
+                    0 0 50px rgba(13, 71, 161, 0.7),
+                    0 0 70px rgba(13, 71, 161, 0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Thêm particles -->
+    <div class="particles">
+        <script>
+            for(let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.opacity = Math.random();
+                document.querySelector('.particles').appendChild(particle);
+            }
+        </script>
+    </div>
+
+    <div class="cloud-container">
+        <h1>Hoodie Challenge</h1>
+        <div class="cloud-links">
+            <a href="theory.html" class="cloud-button">Lý thuyết</a>
+            <a href="visual.html" class="cloud-button">Mô phỏng</a>
+            <a href="story.html" class="cloud-button">Chơi game</a>
+        </div>
+    </div>
+</body>
+</html>

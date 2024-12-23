@@ -1,0 +1,219 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+.back-button {
+  margin-right: 20px;
+}
+header h1 {
+  flex-grow: 1; /* Đảm bảo tiêu đề chiếm không gian còn lại */
+  text-align: center; /* Căn giữa tiêu đề */
+}
+body {
+  background-color: #f0f0f0;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Đặt khoảng cách giữa nút và tiêu đề */
+}
+header {
+  background-color: #ee9292;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+}
+
+.input-group label {
+  margin-right: 0.5rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.visualization {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+#array_container {
+  width: 60%;
+  height: 400px;
+  background-color: white;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+}
+
+#code_container {
+  width: 35%;
+  background-color: #e6ffe6;
+  padding: 1rem;
+  border-radius: 5px;
+}
+
+#insertion_code {
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.highlight {
+  background-color: yellow;
+}
+
+.legend {
+  display: flex;
+  justify-content: space-around;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+}
+
+.color-box {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+}
+
+.initial { background-color: #3498db; }
+.comparing { background-color: #f1c40f; }
+.swapping { background-color: #e74c3c; }
+.sorted { background-color: #2ecc71; }
+
+.array-bar {
+    position: relative;
+    display: inline-block;
+    margin: 0 1px;
+}
+
+.array-bar .bar-value {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: black;
+}
+#banner {
+  
+  background-image: url("/assets/thuat-toan-insertion-sort-sap-xep-chen.jpg");
+ width: max-content;
+  margin-top: 40px;
+  display: flex;
+  padding: 0px;
+  position: absolute;
+  
+}
+
+#content{
+ 
+  display: flex;
+  flex-direction: column;
+   background-color: #f1f1f1;
+   border-radius: 20px;
+   padding: 100px;
+   position: absolute;
+   right: 150px;
+   left: 150px;
+   top: 600px;
+   width: 1000px;
+   align-self: center;
+ }
+ #content h1{
+   font-family: Appears;
+   text-align: center;
+  
+   
+   color: rgb(125, 171, 192);
+ }
+ #content h2{
+   font-family: Appears;
+   text-align: 100px;
+   color: rgb(121, 156, 196);
+   text-align: center;
+ }
+ 
+ #content h6{
+   font-family: Appears;
+   text-align: 100px;
+  
+   text-align: center;
+ }
+ #content img{
+   align-self: center;
+ }
+ 
+ #content iframe{
+   align-self: center;
+ }
+ #explanation_container {
+  background-color: #e0f7fa;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 5px;
+  font-size: 18px;
+  color: #333;
+}
+
+#explanation {
+  font-weight: bold;
+}
+.step-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.step-controls button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.step-controls button:hover {
+  background-color: #45a049;
+}
+
+.step-controls button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Câu chuyện</title>
+    <link rel="stylesheet" href="story.css"> <!-- Liên kết đến file CSS -->
+</head>
+<body>
+    <header>
+      <div class="header-container">
+          <a href="index.html" class="back-button"><img src="assets/main.png"></a>
+        </div>
+    </header>
+
+    <!-- Thêm nút Guide -->
+    <div id="guide-button-container">
+        <img id="guide-button" src="assets/image-removebg-preview.png" alt="Hướng Dẫn">
+    </div>
+
+    <!-- Thêm modal hướng dẫn -->
+    <div id="guide-modal">
+        <div id="guide-modal-content">
+            <img id="guide-image" src="assets/guide.png" alt="Bảng Hướng Dẫn">
+            <img id="close-button" src="assets/tat.png" alt="Đóng" />
+        </div>
+    </div>
+
+    <!-- Nút Start Game -->
+    <div id="start-button-container">
+        <img id="start-button" src="assets/start.png" alt="Start Game">
+    </div>
+
+    <!-- Thêm nút skip sau start-button-container -->
+    <div id="skip-button-container">
+        <img id="skip-button" src="assets/skip.png" alt="Skip">
+    </div>
+
+    <img id="play-button" src="assets/play.png" alt="Play Game" onclick="window.location.href='play.html'">
+
+    <script src="story.js"></script>
+    <script>
+         document.getElementById("start-button").addEventListener("click", function() {
+            const audio = document.getElementById("background-music");
+
+            // Phát nhạc khi người dùng nhấn vào start-button
+            audio.play();
+
+            const startButton = document.getElementById("start-button");
+
+            // Thêm lớp 'morph' vào hình ảnh start.png để thực hiện hiệu ứng phóng to và biến mất
+            startButton.classList.add("morph");
+
+            // Ẩn nút Guide ban đầu
+            document.getElementById("guide-button-container").style.display = "none";
+
+            setTimeout(function() {
+                // Thay đổi background thành thoai1.png
+                document.body.style.backgroundImage = "url('assets/thoai1.png')";
+                // Ẩn hình ảnh start.png
+                startButton.style.display = "none";
+
+                // Thêm hàm để chuyển background và hiển thị nút Guide khi đến thoai7
+                let currentBackground = 1;
+                const changeBackground = setInterval(function() {
+                    currentBackground++;
+                    if (currentBackground <= 7) {
+                        document.body.style.backgroundImage = `url('assets/thoai${currentBackground}.png')`;
+                        
+                        // Chỉ hiển thị nút Guide khi đến thoai7
+                        if (currentBackground === 7) {
+                            document.getElementById("guide-button-container").style.display = "block";
+                            document.getElementById("play-button").style.display = "block";
+                            clearInterval(changeBackground);
+                        }
+                    }
+                }, 2000); // Thời gian chuyển đổi giữa các background
+            }, 1000); // Thời gian này phải khớp với thời gian hiệu ứng phóng to (1s)
+        });
+
+        // Thêm xử lý cho nút Guide
+        document.getElementById("guide-button").addEventListener("click", function() {
+            const guideModal = document.getElementById("guide-modal");
+            guideModal.classList.add("show");
+        });
+
+        document.getElementById("close-button").addEventListener("click", function() {
+            const guideModal = document.getElementById("guide-modal");
+            guideModal.classList.remove("show");
+        });
+    </script>
+

@@ -1,0 +1,76 @@
+.back-button {
+    margin-right: 20px;
+  }
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Đặt khoảng cách giữa nút và tiêu đề */
+  }
+header {
+    background-color: #dfaaaa;
+    color: white;
+    text-align: center;
+    padding: 0.5rem;
+  }
+  header h1 {
+    flex-grow: 1; /* Đảm bảo tiêu đề chiếm không gian còn lại */
+    text-align: center; /* Căn giữa tiêu đề */
+  }
+html {
+    font-size: 20px;
+}
+
+body {
+    background: #fefffe;
+}
+#banner {
+    background-image: url("assets/Capture.PNG");
+    width: max-content;
+    margin-top: 40px;
+    display: flex;
+    padding: 0px;
+    position: absolute;
+    
+}
+
+#content{
+   
+   display: flex;
+   flex-direction: column;
+    background-color: #f1f1f1;
+    border-radius: 20px;
+    padding: 100px;
+    position: absolute;
+    right: 150px;
+    left: 150px;
+    top: 600px;
+    width: 1000px;
+    align-self: center;
+}
+#content h1{
+    font-family: Appears;
+    text-align: center;
+   
+    
+    color: rgb(128, 127, 84);
+}
+#content h2{
+    font-family: Appears;
+    text-align: 100px;
+    color: rgb(140, 146, 118);
+    text-align: center;
+}
+
+#content h6{
+    font-family: Appears;
+    text-align: 100px;
+   
+    text-align: center;
+}
+#content img{
+    align-self: center;
+}
+
+#content iframe{
+    align-self: center;
+}
