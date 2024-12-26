@@ -142,5 +142,11 @@ window.onload = function() {
         console.error("Sort button not found");
     }
     
+    // Thêm xử lý sự kiện cho nút Reset
+    var resetButton = document.getElementById("a_reset");
+    if (resetButton) {
+        resetButton.addEventListener("click", resetContent);
+    }
+
     generate_array();
 };
