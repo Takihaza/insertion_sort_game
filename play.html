@@ -103,9 +103,10 @@
     let bars = document.getElementsByClassName('bar');
     let sizes = ["4XS", "3XS", "2XS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
     let sizeOrder = {
-    "4XS": 0, "3XS": 1, "2XS": 2, "XS": 3, "S": 4, "M": 5, "L": 6, 
-    "XL": 7, "2XL": 8, "3XL": 9, "4XL": 10, "5XL": 11, "6XL": 12
-};
+        '4XS': 0, '3XS': 1, '2XS': 2, 'XS': 3, 'S': 4, 
+        'M': 5, 'L': 6, 'XL': 7, '2XL': 8, '3XL': 9,
+        '4XL': 10, '5XL': 11, '6XL': 12
+    };
     let currentIndex = 0;
     // Khai báo một lần duy nhất ở phần sau
     let isPaused = false;
@@ -174,12 +175,20 @@
         selectedBar = true;
     }
 
-function swapBars(index1, index2) {
-    let tempSize = bars[index1].innerHTML;
-    bars[index1].innerHTML = bars[index2].innerHTML;
-    bars[index2].innerHTML = tempSize;
-    bars[index1].style.left = `${index1 * 10}%`;
-    bars[index2].style.left = `${index2 * 10}%`;
+function swapBars(from, to) {
+    // Lưu thông tin về bước di chuyển
+    moveHistory.push({
+        from: from,
+        to: to,
+        currentSize: bars[from].querySelector('span').innerText.trim(),
+        leftSize: bars[to].querySelector('span').innerText.trim()
+    });
+    
+    let tempSize = bars[from].innerHTML;
+    bars[from].innerHTML = bars[to].innerHTML;
+    bars[to].innerHTML = tempSize;
+    bars[from].style.left = `${from * 10}%`;
+    bars[to].style.left = `${to * 10}%`;
 }
     function init() {
         resetBars();
@@ -569,76 +578,18 @@ function resetBars() {
         if (isCorrectOrder) {
             game_over = true;
             let timeTaken = Math.round((time_now() - start_time) / 1000);
+            score = calculateScore();
             
-            // Tính điểm cơ bản và bonus thời gian
-            let basePoints = 50;
-            let timeBonus = Math.max(0, 30 - Math.floor(timeTaken / 10));
-            
-            // Thêm tính điểm cho số bước di chuyển
-            let moveBonus = Math.max(0, 50 - Math.floor(moveCount / 2));
-            
-            // Tính bonus cho thuật toán
-            let algorithmBonus = 0;
-            let message = '';
-
-            // Phân tích thuật toán sử dụng
-            let algorithmUsed = analyzeAlgorithm(moveHistory);
-            
-            switch(algorithmUsed) {
-                case 'insertion':
-                    algorithmBonus = 50;
-                    message = "Chúc mừng! Bạn đã sử dụng thuật toán Insertion Sort\n";
-                    break;
-                case 'bubble':
-                    algorithmBonus = 30;
-                    message = "Bạn đã sử dụng Bubble Sort. Đây cũng là một cách giải quyết tốt!\n";
-                    break;
-                case 'selection':
-                    algorithmBonus = 30;
-                    message = "Bạn đã sử dụng Selection Sort. Rất sáng tạo!\n";
-                    break;
-                default:
-                    algorithmBonus = 20;
-                    message = "Bạn đã sử dụng một phương pháp sắp xếp độc đáo!\n";
-            }
-
-            // Tính điểm trừ từ việc kiểm tra quá số lần cho phép
-            let checkPenalty = 0;
-            if (checkCount > MAX_FREE_CHECKS) {
-                checkPenalty = (checkCount - MAX_FREE_CHECKS) * PENALTY_PER_CHECK;
-            }
-
-            // Tính tổng điểm và hiển thị chi tiết
-            score = basePoints + timeBonus + moveBonus + algorithmBonus - checkPenalty;
-            score = Math.max(0, score); // Đảm bảo điểm không âm
-
-            message += `Điểm cơ bản: ${basePoints}\n`;
-            message += `Bonus thời gian: +${timeBonus}\n`;
-            message += `Bonus số bước: +${moveBonus}\n`;
-            message += `Bonus thuật toán: +${algorithmBonus}\n`;
-            if (checkPenalty > 0) {
-                message += `Điểm trừ do kiểm tra quá số lần: -${checkPenalty}\n`;
-            }
+            let message = `Chúc mừng! Bạn đã hoàn thành!\n`;
+            message += `Thời gian: ${timeTaken} giây\n`;
             message += `Số bước di chuyển: ${moveCount}\n`;
-            message += `Thời gian hoàn thành: ${timeTaken} giây\n`;
             message += `Tổng điểm: ${score}`;
-            
-            // Lưu điểm cao và lấy danh sách điểm cao
-            const highScores = saveHighScore(score, timeTaken, moveCount);
-            
-            // Thêm thông tin điểm cao vào message
-            message += '\n\n=== BẢNG XẾP HẠNG ===\n';
-            highScores.forEach((hs, index) => {
-                message += `${index + 1}. ${hs.score} điểm - ${hs.moves} bước - ${hs.time}s (${hs.date})\n`;
-            });
-            
-            // Kiểm tra nếu là điểm cao mới
-            if (highScores[0].score === score && highScores[0].time === timeTaken) {
-                message += '\nChúc mừng! Bạn đã đạt điểm cao mới!';
-            }
             
             updateStats('score', "Điểm: " + score);
             document.getElementById('commentary').innerHTML = message;
+            
+            // Lưu điểm cao và hiển thị
+            const highScores = saveHighScore(score, timeTaken, moveCount);
             end_game(true);
         }
     }
@@ -798,16 +749,29 @@ function resetBars() {
     function checkIfInsertionSort(moves) {
         if (moves.length === 0) return false;
         
-        // Kiểm tra đặc điểm của Insertion Sort:
-        // - Di chuyển từ phải sang trái
-        // - Chỉ di chuyển khi phần tử bên trái lớn hơn
+        let sortedRange = 1; // Phạm vi đã sắp xếp, bắt đầu từ phần tử đầu tiên
+        
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
-            if (move.from <= move.to || 
-                sizeOrder[move.leftSize] <= sizeOrder[move.currentSize]) {
+            console.log('Kiểm tra bước:', move);
+            
+            // Kiểm tra xem có đang di chuyển trong phạm vi đã sắp xếp không
+            if (move.from > sortedRange) {
+                console.log('Di chuyển không đúng thứ tự');
                 return false;
             }
+            
+            // Kiểm tra di chuyển sang trái và so sánh kích thước
+            if (move.to < move.from && 
+                sizeOrder[move.currentSize] < sizeOrder[move.leftSize]) {
+                sortedRange = Math.max(sortedRange, move.from + 1);
+                continue;
+            }
+            
+            console.log('Di chuyển không hợp lệ');
+            return false;
         }
+        
         return true;
     }
 
@@ -916,6 +880,133 @@ function resetBars() {
     // Thêm event listeners
     document.getElementById('pause-button').addEventListener('click', pauseGame);
     document.getElementById('resume-button').addEventListener('click', resumeGame);
+
+    function insertionSort() {
+        if (game_over) return;
+        
+        let i = 1;
+        function sortStep() {
+            if (i < bars.length) {
+                let key = bars[i].querySelector('span').innerText.trim();
+                let j = i - 1;
+                
+                // Tô màu phần tử đang xét
+                bars[i].style.backgroundColor = '#ffeb3b';
+                
+                function compareStep() {
+                    if (j >= 0 && sizeOrder[bars[j].querySelector('span').innerText.trim()] > sizeOrder[key]) {
+                        // Di chuyển phần tử lớn hơn sang phải
+                        swapBars(j + 1, j);
+                        bars[j].style.backgroundColor = '#4caf50';
+                        j--;
+                        setTimeout(compareStep, delay_time);
+                    } else {
+                        // Đã tìm được vị trí chèn
+                        i++;
+                        setTimeout(sortStep, delay_time);
+                    }
+                }
+                
+                compareStep();
+            } else {
+                // Hoàn thành sắp xếp
+                checkOrder();
+            }
+        }
+        
+        sortStep();
+    }
+
+    function calculateScore() {
+        // Điểm cơ bản
+        let baseScore = 100;
+        
+        // Tính thời gian (giây)
+        let timeTaken = Math.round((time_now() - start_time) / 1000);
+        
+        // Bonus thời gian: Càng nhanh càng nhiều điểm
+        let timeBonus = Math.max(0, 100 - Math.floor(timeTaken / 2)); // Mỗi 2 giây trừ 1 điểm từ 100
+        
+        // Bonus số bước: Càng ít bước càng nhiều điểm
+        let moveBonus = Math.max(0, 100 - (moveCount * 2)); // Mỗi bước đi trừ 2 điểm từ 100
+        
+        // Bonus thuật toán
+        let algorithmBonus = 0;
+        let algorithmUsed = analyzeAlgorithm(moveHistory);
+        
+        switch(algorithmUsed) {
+            case 'insertion':
+                algorithmBonus = 50; // Insertion Sort được thưởng nhiều nhất
+                break;
+            case 'bubble':
+            case 'selection':
+                algorithmBonus = 30; // Bubble và Selection Sort được thưởng ít hơn
+                break;
+            default:
+                algorithmBonus = 10; // Các cách khác được thưởng ít nhất
+        }
+        
+        // Trừ điểm cho mỗi lần kiểm tra vượt quá số lần cho phép
+        let checkPenalty = 0;
+        if (checkCount > MAX_FREE_CHECKS) {
+            checkPenalty = (checkCount - MAX_FREE_CHECKS) * PENALTY_PER_CHECK;
+        }
+        
+        // Tính tổng điểm
+        let totalScore = baseScore + timeBonus + moveBonus + algorithmBonus - checkPenalty;
+        
+        // Đảm bảo điểm không âm và không vượt quá 300
+        totalScore = Math.max(0, Math.min(300, totalScore));
+        
+        console.log(`
+            Điểm cơ bản: ${baseScore}
+            Bonus thời gian: ${timeBonus}
+            Bonus số bước: ${moveBonus}
+            Bonus thuật toán: ${algorithmBonus}
+            Điểm phạt kiểm tra: -${checkPenalty}
+            Tổng điểm: ${totalScore}
+        `);
+        
+        return Math.round(totalScore);
+    }
+
+    // Hàm cập nhật hiển thị điểm
+    function updateScore() {
+        const score = calculateScore();
+        document.getElementById('score').textContent = `Điểm: ${score}`;
+    }
+
+    // Hàm hiển thị thông báo
+    function showNotification(message) {
+        const notification = document.getElementById('notification-box');
+        notification.textContent = message;
+        notification.classList.remove('notification-hidden');
+        setTimeout(() => {
+            notification.classList.add('notification-hidden');
+        }, 3000);
+    }
+
+    // Hàm reset game
+    function resetGame() {
+        moveHistory = [];
+        moveCount = 0;
+        startTime = Date.now();
+        checkCount = 0;
+        updateScore();
+        console.log('Đã reset game');
+    }
+
+    // Hàm ghi lại di chuyển
+    function recordMove(from, to) {
+        moveHistory.push({
+            from: from,
+            to: to,
+            currentSize: bars[from].querySelector('span').innerText.trim(),
+            leftSize: bars[to].querySelector('span').innerText.trim()
+        });
+        moveCount++;
+        updateScore(); // Cập nhật điểm sau mỗi bước di chuyển
+    }
 
     </script>
     <audio id="backgroundMusic" loop src="assets/Sway To My Beat In Cosmos _ Welcome to My World - Robin (HSR).mp3"></audio>   

@@ -1,4 +1,6 @@
 let isRunning = false;
+let currentSpeed = 4;
+let delay = 1000; // Khởi tạo delay mặc định
 
 async function checkPause() {
     while (paused) {
@@ -118,4 +120,130 @@ async function div_update(div, height, color) {
             resolve();
         }, 1); // Giảm delay xuống tối thiểu
     });
+}
+
+// Thêm xử lý sự kiện cho nút reset
+document.getElementById("a_reset").addEventListener("click", function() {
+    // Dừng tất cả các animation và quá trình sắp xếp
+    if (typeof sorting !== 'undefined') {
+        clearTimeout(sorting);
+    }
+    
+    // Reset các biến điều khiển
+    isSorting = false;
+    isPaused = false;
+    
+    // Xóa hoàn toàn mảng và tạo lại container
+    const arrayContainer = document.getElementById("array_container");
+    arrayContainer.innerHTML = "";
+    
+    // Reset các input về mặc định
+    document.getElementById("a_size").value = "15";
+    document.getElementById("a_speed").value = "4";
+    document.getElementById("a_input").value = "";
+    
+    // Reset text giải thích
+    document.getElementById("explanation").textContent = "Giải thích từng bước sẽ được hiển thị ở đây.";
+    
+    // Reset highlighting trong code
+    const codeLines = document.querySelectorAll("#insertion_code span");
+    codeLines.forEach(line => {
+        line.classList.remove("active");
+        line.style.backgroundColor = "";
+        line.style.color = ""; // Reset màu chữ
+    });
+    
+    // Reset trạng thái các nút
+    enableSortingBtn();
+    document.getElementById("a_pause").disabled = true;
+    document.getElementById("a_continue").disabled = true;
+
+    // Force stop animation
+    if (typeof animationId !== 'undefined') {
+        window.cancelAnimationFrame(animationId);
+    }
+    
+    // Clear tất cả các timeout
+    var highestTimeoutId = setTimeout(";");
+    for (var i = 0; i < highestTimeoutId; i++) {
+        clearTimeout(i);
+    }
+
+    // Reset tất cả các thanh về màu mặc định
+    const bars = document.getElementsByClassName("array-bar");
+    Array.from(bars).forEach(bar => {
+        bar.style.backgroundColor = "";
+        bar.classList.remove("comparing", "swapping", "sorted");
+    });
+
+    // Reset các biến theo dõi trạng thái
+    if (typeof currentIdx !== 'undefined') currentIdx = -1;
+    if (typeof comparingIdx !== 'undefined') comparingIdx = -1;
+
+    // Reset tốc độ về mặc định
+    document.getElementById("a_speed").value = "4";
+    updateSpeed(); // Cập nhật delay dựa trên tốc độ mặc định
+
+    updateExplanation('default');
+});
+
+// Hàm cập nhật delay dựa trên giá trị của thanh trượt tốc độ
+function updateSpeed() {
+    const speed = parseInt(document.getElementById("a_speed").value);
+    delay = 1100 - speed * 200; // speed 1 -> 900ms, speed 5 -> 100ms
+}
+
+// Thêm event listener cho thanh trượt tốc độ
+document.getElementById("a_speed").addEventListener("input", updateSpeed);
+
+// Sửa lại hàm sleep để sử dụng delay hiện tại
+function sleep() {
+    return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+// Đảm bảo cập nhật tốc độ ban đầu khi trang được tải
+document.addEventListener("DOMContentLoaded", updateSpeed);
+
+// Sửa lại phần disable controls trong quá trình sắp xếp
+function disableSortingBtn() {
+    document.getElementById("a_generate").disabled = true;
+    document.getElementById("a_create").disabled = true;
+    document.getElementById("a_sort").disabled = true;
+    // Không disable thanh tốc độ
+    // document.getElementById("a_speed").disabled = true; // Bỏ dòng này
+}
+
+function enableSortingBtn() {
+    document.getElementById("a_generate").disabled = false;
+    document.getElementById("a_create").disabled = false;
+    document.getElementById("a_sort").disabled = false;
+    // Không cần enable thanh tốc độ vì nó không bị disable
+    // document.getElementById("a_speed").disabled = false; // Bỏ dòng này
+}
+
+// Hàm cập nhật giải thích cho từng bước
+function updateExplanation(step, key, j) {
+    const explanation = document.getElementById("explanation");
+    switch(step) {
+        case 'start':
+            explanation.textContent = `Bắt đầu xét phần tử có giá trị ${key} tại vị trí ${j + 1}`;
+            break;
+        case 'compare':
+            explanation.textContent = `So sánh ${key} với phần tử ${arr[j]} tại vị trí ${j}`;
+            break;
+        case 'shift':
+            explanation.textContent = `Di chuyển phần tử ${arr[j]} sang phải một vị trí vì ${arr[j]} > ${key}`;
+            break;
+        case 'insert':
+            explanation.textContent = `Chèn giá trị ${key} vào vị trí ${j + 1} vì đã tìm được vị trí thích hợp`;
+            break;
+        case 'sorted':
+            explanation.textContent = `Phần mảng bên trái đã được sắp xếp tăng dần`;
+            break;
+        case 'complete':
+            explanation.textContent = `Hoàn thành sắp xếp! Mảng đã được sắp xếp theo thứ tự tăng dần.`;
+            break;
+        default:
+            explanation.textContent = "Giải thích từng bước sẽ được hiển thị ở đây.";
+    }
 }
