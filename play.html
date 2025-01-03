@@ -474,32 +474,41 @@ function resetBars() {
 
     // Cp nhật hàm analyzeAlgorithm để nhận diện chính xác hơn
     function analyzeAlgorithm(moves) {
-        if (moves.length === 0) return 'unknown';
+        if (moves.length === 0) return false;
         
-        let leftMoves = 0;
-        let rightMoves = 0;
+        let isInsertion = true;
+        let currentIndex = 1; // Bắt đầu từ phần tử thứ 2
+        let lastProcessedIndex = 0;
         
-        moves.forEach(move => {
-            if (move.from > move.to) leftMoves++;
-            if (move.from < move.to) rightMoves++;
-        });
-        
-        // Đơn giản hóa điều kiện nhận diện Insertion Sort
-        if (leftMoves > rightMoves) {
-            return 'insertion';
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i];
+            
+            // Trong Insertion Sort:
+            // 1. Chọn phần tử từ trái sang phải
+            // 2. Di chuyển phần tử đó sang trái (có thể nhiều vị trí)
+            // 3. Phần tử được di chuyển phải nhỏ hơn phần tử bên trái nó
+            
+            if (move.from > move.to) { // Di chuyển sang trái
+                // Kiểm tra xem có đang di chuyển trong phạm vi đã sắp xếp không
+                if (move.from > lastProcessedIndex) {
+                    lastProcessedIndex = move.from;
+                }
+                
+                // Kiểm tra kích thước
+                if (sizeOrder[move.currentSize] >= sizeOrder[move.leftSize]) {
+                    isInsertion = false;
+                    break;
+                }
+            } else if (move.from < move.to) { // Di chuyển sang phải
+                // Trong Insertion Sort, không nên di chuyển ngược lại phần đã sắp xếp
+                if (move.from < lastProcessedIndex) {
+                    isInsertion = false;
+                    break;
+                }
+            }
         }
         
-        // Bubble Sort: Di chuyển sang phải nhiều và có tính lặp lại
-        if (rightMoves > leftMoves && isBubblePattern(moves)) {
-            return 'bubble';
-        }
-        
-        // Selection Sort: Có mẫu di chuyển đặc trưng
-        if (isSelectionPattern(moves)) {
-            return 'selection';
-        }
-        
-        return 'unknown';
+        return isInsertion;
     }
 
     // Thêm các hàm hỗ trợ mới
@@ -924,29 +933,16 @@ function resetBars() {
         // Tính thời gian (giây)
         let timeTaken = Math.round((time_now() - start_time) / 1000);
         
-        // Bonus thời gian: Càng nhanh càng nhiều điểm
-        let timeBonus = Math.max(0, 100 - Math.floor(timeTaken / 2)); // Mỗi 2 giây trừ 1 điểm từ 100
+        // Bonus thời gian: Mỗi 2 giây trừ 1 điểm từ 100
+        let timeBonus = Math.max(0, 100 - Math.floor(timeTaken / 2)); 
         
-        // Bonus số bước: Càng ít bước càng nhiều điểm
-        let moveBonus = Math.max(0, 100 - (moveCount * 2)); // Mỗi bước đi trừ 2 điểm từ 100
+        // Bonus số bước: Mỗi bước trừ 2 điểm từ 100
+        let moveBonus = Math.max(0, 100 - (moveCount * 2)); 
         
-        // Bonus thuật toán
-        let algorithmBonus = 0;
-        let algorithmUsed = analyzeAlgorithm(moveHistory);
+        // Bonus thuật toán: 50 điểm cho Insertion Sort, 10 điểm cho các cách khác
+        let algorithmBonus = analyzeAlgorithm(moveHistory) ? 50 : 10;
         
-        switch(algorithmUsed) {
-            case 'insertion':
-                algorithmBonus = 50; // Insertion Sort được thưởng nhiều nhất
-                break;
-            case 'bubble':
-            case 'selection':
-                algorithmBonus = 30; // Bubble và Selection Sort được thưởng ít hơn
-                break;
-            default:
-                algorithmBonus = 10; // Các cách khác được thưởng ít nhất
-        }
-        
-        // Trừ điểm cho mỗi lần kiểm tra vượt quá số lần cho phép
+        // Điểm phạt kiểm tra
         let checkPenalty = 0;
         if (checkCount > MAX_FREE_CHECKS) {
             checkPenalty = (checkCount - MAX_FREE_CHECKS) * PENALTY_PER_CHECK;
@@ -955,19 +951,7 @@ function resetBars() {
         // Tính tổng điểm
         let totalScore = baseScore + timeBonus + moveBonus + algorithmBonus - checkPenalty;
         
-        // Đảm bảo điểm không âm và không vượt quá 300
-        totalScore = Math.max(0, Math.min(300, totalScore));
-        
-        console.log(`
-            Điểm cơ bản: ${baseScore}
-            Bonus thời gian: ${timeBonus}
-            Bonus số bước: ${moveBonus}
-            Bonus thuật toán: ${algorithmBonus}
-            Điểm phạt kiểm tra: -${checkPenalty}
-            Tổng điểm: ${totalScore}
-        `);
-        
-        return Math.round(totalScore);
+        return Math.max(0, Math.min(300, Math.round(totalScore)));
     }
 
     // Hàm cập nhật hiển thị điểm
@@ -998,14 +982,19 @@ function resetBars() {
 
     // Hàm ghi lại di chuyển
     function recordMove(from, to) {
+        const currentSize = bars[from].querySelector('span').innerText.trim();
+        const leftSize = to > 0 ? bars[to-1].querySelector('span').innerText.trim() : null;
+        
         moveHistory.push({
             from: from,
             to: to,
-            currentSize: bars[from].querySelector('span').innerText.trim(),
-            leftSize: bars[to].querySelector('span').innerText.trim()
+            currentSize: currentSize,
+            leftSize: leftSize,
+            timestamp: Date.now()
         });
+        
         moveCount++;
-        updateScore(); // Cập nhật điểm sau mỗi bước di chuyển
+        updateStats('moveCounter', `Số bước: ${moveCount}`);
     }
 
     </script>
