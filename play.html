@@ -475,58 +475,40 @@ function resetBars() {
     // Cp nhật hàm analyzeAlgorithm để nhận diện chính xác hơn
     function analyzeAlgorithm(moves) {
         if (moves.length === 0) return false;
-        
-        // Kiểm tra đặc điểm của Selection Sort
-        let isSelectionSort = true;
-        let sortedCount = 0;
-        for (let i = 0; i < moves.length; i++) {
-            if (moves[i].to === sortedCount) {
-                sortedCount++;
-            }
-        }
-        if (sortedCount >= moves.length / 2) return false; // Selection Sort
-        
-        // Kiểm tra đặc điểm của Bubble Sort
-        let isBubbleSort = true;
-        let passes = 0;
-        let currentPass = [];
-        for (let i = 0; i < moves.length; i++) {
-            if (moves[i].from === moves[i].to - 1) {
-                currentPass.push(moves[i]);
-                if (moves[i].from === 0 || i === moves.length - 1) {
-                    if (currentPass.length > 0) passes++;
-                    currentPass = [];
-                }
-            }
-        }
-        if (passes >= 2) return false; // Bubble Sort
-        
-        // Kiểm tra đặc điểm của Insertion Sort
-        let sortedRange = 1;
-        let isInsertionSort = true;
-        
+
+        let insertionSortScore = 0;
+        let currentSortedRange = 1;
+
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             
+            // Đặc điểm của Insertion Sort:
+            // 1. Di chuyển từ phải sang trái
+            // 2. So sánh và chèn vào vị trí đúng trong phần đã sắp xếp
             if (move.from > move.to) {
-                // Di chuyển sang trái
-                if (move.from <= sortedRange && 
-                    sizeOrder[move.currentSize] < sizeOrder[move.leftSize]) {
-                    sortedRange = Math.max(sortedRange, move.from + 1);
-                    continue;
+                // Kiểm tra xem có đang di chuyển trong phạm vi đã sắp xếp
+                if (move.from <= currentSortedRange + 1) {
+                    // Kiểm tra xem phần tử có được chèn vào đúng vị trí không
+                    let isCorrectInsertion = true;
+                    for (let j = move.to; j < move.from; j++) {
+                        if (sizeOrder[move.currentSize] > sizeOrder[moves[i].leftSize]) {
+                            isCorrectInsertion = false;
+                            break;
+                        }
+                    }
+                    if (isCorrectInsertion) {
+                        insertionSortScore++;
+                        currentSortedRange = Math.max(currentSortedRange, move.from + 1);
+                    }
                 }
-                isInsertionSort = false;
-                break;
-            } else if (move.to > sortedRange) {
-                // Di chuyển trong phần chưa sắp xếp
-                continue;
-            } else {
-                isInsertionSort = false;
-                break;
             }
         }
+
+        // Tính tỷ lệ các bước di chuyển đúng của Insertion Sort
+        const insertionSortRatio = insertionSortScore / moves.length;
         
-        return isInsertionSort;
+        // Nếu ít nhất 70% các bước di chuyển phù hợp với Insertion Sort
+        return insertionSortRatio >= 0.7;
     }
 
     // Thêm các hàm hỗ trợ mới
@@ -947,19 +929,36 @@ function resetBars() {
     function calculateScore() {
         let baseScore = 100;
         let timeTaken = Math.round((time_now() - start_time) / 1000);
-        let timeBonus = Math.max(0, 100 - Math.floor(timeTaken / 2)); 
-        let moveBonus = Math.max(0, 100 - (moveCount * 2)); 
         
-        // Phân biệt rõ điểm thưởng cho từng thuật toán
-        let algorithmBonus = analyzeAlgorithm(moveHistory) ? 50 : 10;
+        // Điều chỉnh thang điểm thời gian
+        let timeBonus = Math.max(0, 100 - Math.floor(timeTaken / 3)); // Giảm nhẹ hơn theo thời gian
         
+        // Điều chỉnh thang điểm số bước di chuyển
+        let moveBonus = Math.max(0, 100 - (moveCount * 1.5)); // Giảm nhẹ hơn theo số bước
+        
+        // Tăng điểm thưởng cho thuật toán
+        let algorithmBonus = 0;
+        if (analyzeAlgorithm(moveHistory)) {
+            // Nếu sử dụng Insertion Sort
+            algorithmBonus = 100; // Tăng điểm thưởng cho Insertion Sort
+            showNotification("Bạn đã sử dụng thuật toán Sắp xếp chèn! +100 điểm");
+        } else if (moveHistory.length > 0) {
+            // Nếu sử dụng thuật toán khác hoặc không nhận diện được
+            algorithmBonus = 20;
+            showNotification("Thuật toán chưa tối ưu. +20 điểm");
+        }
+        
+        // Tính điểm phạt cho việc kiểm tra
         let checkPenalty = 0;
         if (checkCount > MAX_FREE_CHECKS) {
             checkPenalty = (checkCount - MAX_FREE_CHECKS) * PENALTY_PER_CHECK;
         }
         
+        // Tính tổng điểm
         let totalScore = baseScore + timeBonus + moveBonus + algorithmBonus - checkPenalty;
-        return Math.max(0, Math.min(300, Math.round(totalScore)));
+        
+        // Giới hạn điểm trong khoảng 0-400 (tăng điểm tối đa)
+        return Math.max(0, Math.min(400, Math.round(totalScore)));
     }
 
     // Hàm cập nhật hiển thị điểm
@@ -1003,6 +1002,26 @@ function resetBars() {
         
         moveCount++;
         updateStats('moveCounter', `Số bước: ${moveCount}`);
+    }
+
+    // Thêm hàm hiển thị thông báo chi tiết về điểm
+    function showDetailedScore() {
+        let timeTaken = Math.round((time_now() - start_time) / 1000);
+        let timeBonus = Math.max(0, 100 - Math.floor(timeTaken / 3));
+        let moveBonus = Math.max(0, 100 - (moveCount * 1.5));
+        let algorithmBonus = analyzeAlgorithm(moveHistory) ? 100 : 20;
+        let checkPenalty = checkCount > MAX_FREE_CHECKS ? (checkCount - MAX_FREE_CHECKS) * PENALTY_PER_CHECK : 0;
+
+        let message = `
+            Điểm cơ bản: 100
+            Thưởng thời gian: +${timeBonus}
+            Thưởng số bước: +${moveBonus}
+            Thưởng thuật toán: +${algorithmBonus}
+            Điểm phạt kiểm tra: -${checkPenalty}
+            Tổng điểm: ${calculateScore()}
+        `;
+        
+        showNotification(message);
     }
 
     </script>
